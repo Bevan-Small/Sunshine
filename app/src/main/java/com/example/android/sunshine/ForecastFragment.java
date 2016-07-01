@@ -34,15 +34,48 @@ public class ForecastFragment extends Fragment {
 
     ArrayAdapter<String> mForecastAdapter;
 
-
-
     public ForecastFragment() {
     }
 
+    ///////////////////////////////Menu stuff///////////////////////////////
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+        Log.e("Message to myself", "Creating fragment");
+
+
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        Log.e("Message to myself", "Inflating menu");
+        inflater.inflate(R.menu.forecastfragment, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        //respond to menu item selection
+        switch (item.getItemId()) {
+            case R.id.action_refresh:
+                new FetchWeatherTask().execute();
+                return true;
+                //return super.onOptionsItemSelected(item);
+
+            //case R.id.action_settings2:
+
+            //return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    ///////////////////////////// First setup ////////////////////////////
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                               Bundle savedInstanceState) {
-
-
+        Log.e("Message to myself", "Creating view");
         // Create some dummy data for the ListView.  Here's a sample weekly forecast
         String[] data = {
                 "Mon 6/23 - Sunny - 31/17",
@@ -304,26 +337,5 @@ public class ForecastFragment extends Fragment {
 
     }
 
-    ///////////////////////// Menu stuff///////////////////////////////////
-
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.main_menu, menu);
-    }
-
-    public boolean onOptionsItemSelected(MenuItem item) {
-        //respond to menu item selection
-        switch (item.getItemId()) {
-            case R.id.action_refresh:
-                new FetchWeatherTask().execute();
-
-                return true;
-            case R.id.action_settings:
-
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
 
 }
