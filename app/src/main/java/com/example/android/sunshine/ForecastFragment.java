@@ -1,8 +1,11 @@
 package com.example.android.sunshine;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.text.format.Time;
 import android.util.Log;
@@ -12,6 +15,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -27,8 +31,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class ForecastFragment extends Fragment {
 
@@ -49,7 +51,6 @@ public class ForecastFragment extends Fragment {
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        Log.e("Message to myself", "Inflating menu");
         inflater.inflate(R.menu.forecastfragment, menu);
     }
 
@@ -58,13 +59,18 @@ public class ForecastFragment extends Fragment {
         //respond to menu item selection
         switch (item.getItemId()) {
             case R.id.action_refresh:
-                new FetchWeatherTask().execute();
+                updateWeather();
                 return true;
                 //return super.onOptionsItemSelected(item);
 
-            //case R.id.action_settings2:
+            case R.id.action_settings:
 
-            //return true;
+                Intent intent = new Intent(getActivity(), SettingsActivity.class);
+                startActivity(intent);
+                // start settings activity
+
+
+            return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -75,28 +81,14 @@ public class ForecastFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                               Bundle savedInstanceState) {
-        Log.e("Message to myself", "Creating view");
-        // Create some dummy data for the ListView.  Here's a sample weekly forecast
-        String[] data = {
-                "Mon 6/23 - Sunny - 31/17",
-                "Tue 6/24 - Foggy - 21/8",
-                "Wed 6/25 - Cloudy - 22/17",
-                "Thurs 6/26 - Rainy - 18/11",
-                "Fri 6/27 - Foggy - 21/10",
-                "Sat 6/28 - TRAPPED IN WEATHERSTATION - 23/18",
-                "Sun 6/29 - Sunny - 20/7"
-        };
-        List<String> weekForecast = new ArrayList<String>(Arrays.asList(data));
 
-        // Now that we have some dummy forecast data, create an ArrayAdapter.
-        // The ArrayAdapter will take data from a source (like our dummy forecast) and
-        // use it to populate the ListView it's attached to.
+        // Adapter passed blank array on create
         mForecastAdapter =
                 new ArrayAdapter<String>(
                         getActivity(), // The current context (this activity)
                         R.layout.list_item_forecast, // The name of the layout ID.
                         R.id.list_item_forecast_textview, // The ID of the textview to populate.
-                        weekForecast);
+                        new ArrayList<String>());
 
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
@@ -104,15 +96,40 @@ public class ForecastFragment extends Fragment {
         ListView listView = (ListView) rootView.findViewById(R.id.listview_forecast);
         listView.setAdapter(mForecastAdapter);
 
+        // Set a listener to fire users of to a detail view when they click an item
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l){
+                String forecast = mForecastAdapter.getItem(position);
+
+                Intent forecastIntent = new Intent(getActivity(),DetailActivity.class);
+                forecastIntent.putExtra(Intent.EXTRA_TEXT,forecast);
+                startActivity(forecastIntent);
+
+
+            }
+        });
+
+
         return rootView;
     }
 
+    // Populates the adapter with real data
+    @Override
+    public void onStart(){
+        super.onStart();
+        updateWeather();
+    }
 
+    //////////////////////////////Weather updater///////////////////////////////////
 
-    ///////////////////////////////////////////////////////////////////////////////
+    // Helper method that calls the weather updating logic
+    public void updateWeather(){
+        new FetchWeatherTask().execute();
+    }
+
     // Horrifying class that takes in Json data from openweather.org and turns
     // it into presentable data for the listview
-
     class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
 
         private final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
@@ -160,7 +177,11 @@ public class ForecastFragment extends Fragment {
                 final String DAYS_PARAM = "cnt";
                 final String WEATHERAPIKEY_PARAM = "APPID";
 
-                String city = "Auckland";
+                //String city = "Auckland";
+
+                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+                String city = sharedPref.getString(getActivity().getString(R.string.pref_location_key),getActivity().getString(R.string.pref_location_default));
+
                 String countryCode = "NZ";
                 // uri builder interprets comma funny but seems to be ok
                 String cityAndCountry = city+","+countryCode;
